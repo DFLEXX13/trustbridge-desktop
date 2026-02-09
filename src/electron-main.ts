@@ -517,17 +517,19 @@ app.on("ready", async () => {
         event.preventDefault();
 
         // Check if the user expects us to minimize to tray instead of quitting the app
-        // Two cases:
-        // 1. On Linux/Windows, user has enabled "Show tray icon and minimise window to it on close" in settings.
-        // 2. On Mac, the canonical behaviour is to minimize to tray; this is not configurable.
-        const shouldMinimize = store.get("minimizeToTray") || process.platform === "darwin";
+        const shouldMinimize = store.get("minimizeToTray") && (tray.hasTray() || process.platform === "darwin");
         if (shouldMinimize) {
+            // On Mac, closing the window just hides it
+            // (this is generally how single-window Mac apps
+            // behave, eg. Mail.app)
+
             if (global.mainWindow?.isFullScreen()) {
                 global.mainWindow.once("leave-full-screen", () => global.mainWindow?.hide());
                 global.mainWindow.setFullScreen(false);
             } else {
                 global.mainWindow?.hide();
             }
+
             return;
         }
 
