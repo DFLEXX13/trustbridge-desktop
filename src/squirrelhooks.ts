@@ -28,7 +28,7 @@ function runUpdateExe(args: string[]): Promise<void> {
     });
 }
 
-function checkSquirrelHooks(): boolean {
+export function checkSquirrelHooks(): boolean {
     if (process.platform !== "win32") return false;
     const cmd = process.argv[1];
     const target = path.basename(process.execPath);
@@ -50,8 +50,4 @@ function checkSquirrelHooks(): boolean {
         default:
             return false;
     }
-}
-
-if (checkSquirrelHooks()) {
-    process.exit(1);
 }

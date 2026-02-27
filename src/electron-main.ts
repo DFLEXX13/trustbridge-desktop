@@ -46,12 +46,28 @@ import { setupMacosTitleBar } from "./macos-titlebar.js";
 import { type Json, loadJsonFile } from "./utils.js";
 import { setupMediaAuth } from "./media-auth.js";
 import { readBuildConfig } from "./build-config.js";
+import { checkSquirrelHooks } from "./squirrelhooks.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const argv = minimist(process.argv, {
     alias: { help: "h" },
 });
+
+const buildConfig = readBuildConfig();
+
+// This is required to make notification handlers work
+// on Windows 8.1/10/11 (and is a noop on other platforms);
+// It must also match the ID found in 'electron-builder'
+// in order to get the title and icon to show up correctly.
+// Ref: https://stackoverflow.com/a/77314604/3525780
+// Must be done before checkSquirrelHooks() as the hook needs
+// to know what AppUserModelID to set on the shortcut.
+app.setAppUserModelId(buildConfig.appId);
+
+if (checkSquirrelHooks()) {
+    process.exit(1);
+}
 
 if (argv["help"]) {
     console.log("Options:");
@@ -84,7 +100,6 @@ function isRealUserDataDir(d: string): boolean {
     return fs.existsSync(path.join(d, "IndexedDB"));
 }
 
-const buildConfig = readBuildConfig();
 const protocolHandler = new ProtocolHandler(buildConfig.protocol);
 
 // check if we are passed a profile in the SSO callback url
@@ -626,9 +641,3 @@ app.on("second-instance", (ev, commandLine, workingDirectory) => {
     }
 });
 
-// This is required to make notification handlers work
-// on Windows 8.1/10/11 (and is a noop on other platforms);
-// It must also match the ID found in 'electron-builder'
-// in order to get the title and icon to show up correctly.
-// Ref: https://stackoverflow.com/a/77314604/3525780
-app.setAppUserModelId(buildConfig.appId);
