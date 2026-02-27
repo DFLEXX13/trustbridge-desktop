@@ -640,4 +640,3 @@ app.on("second-instance", (ev, commandLine, workingDirectory) => {
         global.mainWindow.focus();
     }
 });
-
