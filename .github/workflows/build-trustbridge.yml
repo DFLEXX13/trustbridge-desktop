@@ -143,15 +143,22 @@ jobs:
             # See https://www.ssl.com/guide/esigner-cka/ for how eSignerCKA maps a cloud-hosted
             # certificate onto a local Windows certificate-store entry that signtool can use.
             - name: Install and configure eSigner CKA
-              if: ${{ secrets.ESIGNER_USER_NAME != '' }}
               shell: powershell
+              env:
+                  ESIGNER_USER_NAME: ${{ secrets.ESIGNER_USER_NAME }}
+                  ESIGNER_USER_PASSWORD: ${{ secrets.ESIGNER_USER_PASSWORD }}
+                  ESIGNER_USER_TOTP: ${{ secrets.ESIGNER_USER_TOTP }}
               run: |
+                  if (-not $env:ESIGNER_USER_NAME) {
+                      Write-Host "No ESIGNER_USER_NAME secret set - skipping signing, build will be unsigned."
+                      exit 0
+                  }
                   Invoke-WebRequest -OutFile eSigner_CKA.zip "https://github.com/SSLcom/eSignerCKA/releases/download/v1.0.6/SSL.COM-eSigner-CKA_1.0.6.zip"
                   Expand-Archive -Path eSigner_CKA.zip -DestinationPath .
                   Get-ChildItem -Path * -Include "*_build_*.exe" | Rename-Item -NewName eSigner_CKA.exe
                   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\eSignerCKA"
                   ./eSigner_CKA.exe /CURRENTUSER /VERYSILENT /SUPPRESSMSGBOXES /DIR="$env:USERPROFILE\eSignerCKA" | Out-Null
-                  & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" config -mode "product" -user "${{ secrets.ESIGNER_USER_NAME }}" -pass "${{ secrets.ESIGNER_USER_PASSWORD }}" -totp "${{ secrets.ESIGNER_USER_TOTP }}" -key "$env:USERPROFILE\eSignerCKA\master.key" -r
+                  & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" config -mode "product" -user "$env:ESIGNER_USER_NAME" -pass "$env:ESIGNER_USER_PASSWORD" -totp "$env:ESIGNER_USER_TOTP" -key "$env:USERPROFILE\eSignerCKA\master.key" -r
                   & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" unload
                   & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" load
                   $Cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1
