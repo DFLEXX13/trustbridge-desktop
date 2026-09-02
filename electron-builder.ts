@@ -135,7 +135,7 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
     },
     copyright: `Copyright © ${new Date().getFullYear()} ${variant.author?.name ?? "New Vector Ltd."}`,
     linux: {
-        target: ["tar.gz", "deb"],
+        target: ["tar.gz", "deb", "AppImage"],
         category: "Network;InstantMessaging;Chat",
         icon: "icon.png",
         executableName: variant.name, // element-desktop or element-desktop-nightly

@@ -24,6 +24,7 @@ jobs:
     build-macos:
         name: macOS (universal)
         runs-on: macos-15
+        if: false # TEMP: linux-only test run, revert after
         steps:
             - uses: maxim-lobanov/setup-xcode@v1
               with:
@@ -106,6 +107,7 @@ jobs:
     build-windows:
         name: Windows (x64)
         runs-on: windows-2025
+        if: false # TEMP: linux-only test run, revert after
         defaults:
             run:
                 shell: bash
@@ -248,3 +250,4 @@ jobs:
                   path: |
                       trustbridge-desktop/dist/*.deb
                       trustbridge-desktop/dist/*.tar.gz
+                      trustbridge-desktop/dist/*.AppImage
