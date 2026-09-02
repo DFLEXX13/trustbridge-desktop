@@ -170,13 +170,15 @@ async function main(): Promise<number | undefined> {
     }
 
     if (!haveDeploy) {
-        const outPath = path.join(pkgDir, filename);
+        // sourceDir being unset is what got us into this branch, so targetVersion resolution
+        // (and therefore filename) always ran above.
+        const outPath = path.join(pkgDir, filename!);
         try {
             await fs.stat(outPath);
             console.log("Already have " + filename + ": not redownloading");
         } catch {
             try {
-                await downloadToFile(url, outPath);
+                await downloadToFile(url!, outPath);
             } catch (e) {
                 console.log("Failed to download " + url, e);
                 return 1;

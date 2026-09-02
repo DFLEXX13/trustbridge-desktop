@@ -136,6 +136,9 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
         category: "Network;InstantMessaging;Chat",
         icon: "icon.png",
         executableName: variant.name, // element-desktop or element-desktop-nightly
+        // .deb packaging requires a maintainer email; this fork only ever builds the
+        // TrustBridge variant, so it's hardcoded rather than added as another variant field.
+        maintainer: "support@trustbridge.space",
     },
     deb: {
         packageCategory: "net",

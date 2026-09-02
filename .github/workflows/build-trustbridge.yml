@@ -25,6 +25,10 @@ jobs:
         name: macOS (universal)
         runs-on: macos-15
         steps:
+            - uses: maxim-lobanov/setup-xcode@v1
+              with:
+                  xcode-version: latest-stable
+
             - name: Checkout trustbridge-desktop
               uses: actions/checkout@v4
               with:

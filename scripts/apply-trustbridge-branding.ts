@@ -17,9 +17,9 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as childProcess from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { globSync } from "glob";
+import sharp from "sharp";
 
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LOGO_SRC = path.join(REPO_ROOT, "trustbridge", "assets", "logo-1024.png");
@@ -399,8 +399,14 @@ ${CSS_MARKER}-global-${theme}
 `;
 }
 
+// glob patterns are POSIX-style regardless of OS - path.join produces backslashes on
+// Windows, which glob silently fails to match against, so normalize separators before globbing.
+function globPath(...segments: string[]): string {
+    return path.join(...segments).split(path.sep).join("/");
+}
+
 function findDeployDirs(): string[] {
-    return globSync(path.join(REPO_ROOT, "deploys", "*", "index.html")).map((p) => path.dirname(p));
+    return globSync(globPath(REPO_ROOT, "deploys", "*", "index.html")).map((p) => path.dirname(p));
 }
 
 function patchLogo(deployDir: string): void {
@@ -443,10 +449,10 @@ function patchI18nFile(filePath: string, replacements: Replacement[]): void {
 }
 
 function patchI18n(deployDir: string): void {
-    const enFiles = globSync(path.join(deployDir, "i18n", "en_EN.*.json"));
+    const enFiles = globSync(globPath(deployDir, "i18n", "en_EN.*.json"));
     for (const f of enFiles) patchI18nFile(f, EN_REPLACEMENTS);
 
-    const ruFiles = globSync(path.join(deployDir, "i18n", "ru.*.json"));
+    const ruFiles = globSync(globPath(deployDir, "i18n", "ru.*.json"));
     for (const f of ruFiles) patchI18nFile(f, RU_REPLACEMENTS);
 }
 
@@ -546,7 +552,7 @@ function patchManifest(deployDir: string): void {
     console.log(`[branding] manifest.json rebranded -> ${path.relative(REPO_ROOT, file)}`);
 }
 
-function patchFavicons(deployDir: string): void {
+async function patchFavicons(deployDir: string): Promise<void> {
     const iconDir = path.join(deployDir, "vector-icons");
     if (!fs.existsSync(iconDir)) {
         console.warn(`[branding] vector-icons dir not found (skipped): ${iconDir}`);
@@ -561,12 +567,11 @@ function patchFavicons(deployDir: string): void {
     for (const file of files) {
         const size = parseInt(file.split(".")[0], 10);
         if (!sizeCache.has(size)) {
-            const tmp = path.join(iconDir, `.trustbridge-tmp-${size}.png`);
-            childProcess.execFileSync("sips", ["-z", String(size), String(size), LOGO_SRC, "--out", tmp], {
-                stdio: "ignore",
-            });
-            sizeCache.set(size, fs.readFileSync(tmp));
-            fs.unlinkSync(tmp);
+            // sharp ships prebuilt libvips binaries per-platform, so this works the same on
+            // macOS/Linux/Windows CI runners - unlike the `sips` CLI it used to shell out to,
+            // which only exists on macOS.
+            const buffer = await sharp(LOGO_SRC).resize(size, size).png().toBuffer();
+            sizeCache.set(size, buffer);
         }
         fs.writeFileSync(path.join(iconDir, file), sizeCache.get(size)!);
     }
@@ -575,7 +580,7 @@ function patchFavicons(deployDir: string): void {
 
 function patchThemeCss(deployDir: string): void {
     const authOverride = buildCssOverride();
-    const cssFiles = globSync(path.join(deployDir, "bundles", "*", "theme-*.css"));
+    const cssFiles = globSync(globPath(deployDir, "bundles", "*", "theme-*.css"));
     for (const f of cssFiles) {
         let contents = fs.readFileSync(f, "utf8");
         const markerIdx = contents.indexOf(CSS_MARKER);
@@ -590,7 +595,7 @@ function patchThemeCss(deployDir: string): void {
     }
 }
 
-function main(): void {
+async function main(): Promise<void> {
     const deployDirs = findDeployDirs();
     if (deployDirs.length === 0) {
         console.error("[branding] No deploy directory found under deploys/ - run `pnpm run fetch` first.");
@@ -603,7 +608,7 @@ function main(): void {
         patchLanguages(dir);
         patchStaticHtml(dir);
         patchManifest(dir);
-        patchFavicons(dir);
+        await patchFavicons(dir);
         patchThemeCss(dir);
     }
     console.log(
@@ -611,4 +616,7 @@ function main(): void {
     );
 }
 
-main();
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});
