@@ -1,0 +1,233 @@
+name: Build TrustBridge Desktop
+
+# Builds TrustBridge Desktop for macOS, Windows, and Linux from source.
+#
+# element-web is built from https://github.com/DFLEXX13/trustbridge-web (checked out as a
+# sibling directory, since scripts/fetch-package.ts --source and package.json's build:element-web
+# script both assume that layout) instead of downloading a tarball release.
+#
+# Signing is opportunistic: if the relevant secrets aren't set, the build still runs and
+# produces an unsigned/ad-hoc-signed artifact (exactly what building locally without
+# APPLE_TEAM_ID/ESIGNER_* env vars already does) rather than failing. Add the secrets once
+# certificates exist (see repo docs / ask Claude) and signing turns on automatically.
+
+on:
+    workflow_dispatch:
+    push:
+        tags:
+            - "v*"
+
+env:
+    VARIANT_PATH: trustbridge/release/build.json
+
+jobs:
+    build-macos:
+        name: macOS (universal)
+        runs-on: macos-15
+        steps:
+            - name: Checkout trustbridge-desktop
+              uses: actions/checkout@v4
+              with:
+                  path: trustbridge-desktop
+
+            - name: Checkout trustbridge-web
+              uses: actions/checkout@v4
+              with:
+                  repository: DFLEXX13/trustbridge-web
+                  ref: develop
+                  path: trustbridge-web
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 11
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: trustbridge-desktop/.node-version
+                  cache: "pnpm"
+                  cache-dependency-path: |
+                      trustbridge-desktop/pnpm-lock.yaml
+                      trustbridge-web/pnpm-lock.yaml
+
+            - name: Install trustbridge-web deps
+              working-directory: trustbridge-web
+              run: pnpm install --frozen-lockfile
+
+            - name: Build element-web
+              working-directory: trustbridge-web
+              run: pnpm --filter element-web build
+
+            - name: Install trustbridge-desktop deps
+              working-directory: trustbridge-desktop
+              run: pnpm install --frozen-lockfile
+
+            - name: Fetch + brand webapp.asar
+              working-directory: trustbridge-desktop
+              run: pnpm run fetch:trustbridge:source
+
+            - name: Import signing certificate
+              if: ${{ vars.APPLE_TEAM_ID != '' }}
+              uses: apple-actions/import-codesign-certs@v3
+              with:
+                  p12-file-base64: ${{ secrets.APPLE_CSC_LINK }}
+                  p12-password: ${{ secrets.APPLE_CSC_KEY_PASSWORD }}
+
+            - name: Build (signed + notarized)
+              if: ${{ vars.APPLE_TEAM_ID != '' }}
+              working-directory: trustbridge-desktop
+              run: pnpm run build:universal
+              env:
+                  APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+                  APPLE_ID: ${{ secrets.APPLE_ID }}
+                  APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+
+            - name: Build (unsigned)
+              if: ${{ vars.APPLE_TEAM_ID == '' }}
+              working-directory: trustbridge-desktop
+              run: pnpm run build:universal
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: trustbridge-macos-universal
+                  retention-days: 14
+                  path: |
+                      trustbridge-desktop/dist/*.dmg
+                      trustbridge-desktop/dist/*.zip
+
+    build-windows:
+        name: Windows (x64)
+        runs-on: windows-2025
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - name: Checkout trustbridge-desktop
+              uses: actions/checkout@v4
+              with:
+                  path: trustbridge-desktop
+
+            - name: Checkout trustbridge-web
+              uses: actions/checkout@v4
+              with:
+                  repository: DFLEXX13/trustbridge-web
+                  ref: develop
+                  path: trustbridge-web
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 11
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: trustbridge-desktop/.node-version
+                  cache: "pnpm"
+                  cache-dependency-path: |
+                      trustbridge-desktop/pnpm-lock.yaml
+                      trustbridge-web/pnpm-lock.yaml
+
+            - name: Install trustbridge-web deps
+              working-directory: trustbridge-web
+              run: pnpm install --frozen-lockfile
+
+            - name: Build element-web
+              working-directory: trustbridge-web
+              run: pnpm --filter element-web build
+
+            - name: Install trustbridge-desktop deps
+              working-directory: trustbridge-desktop
+              run: pnpm install --frozen-lockfile
+
+            - name: Fetch + brand webapp.asar
+              working-directory: trustbridge-desktop
+              run: pnpm run fetch:trustbridge:source
+
+            # SSL.com eSigner cloud HSM signing - only runs if credentials are configured.
+            # See https://www.ssl.com/guide/esigner-cka/ for how eSignerCKA maps a cloud-hosted
+            # certificate onto a local Windows certificate-store entry that signtool can use.
+            - name: Install and configure eSigner CKA
+              if: ${{ secrets.ESIGNER_USER_NAME != '' }}
+              shell: powershell
+              run: |
+                  Invoke-WebRequest -OutFile eSigner_CKA.zip "https://github.com/SSLcom/eSignerCKA/releases/download/v1.0.6/SSL.COM-eSigner-CKA_1.0.6.zip"
+                  Expand-Archive -Path eSigner_CKA.zip -DestinationPath .
+                  Get-ChildItem -Path * -Include "*_build_*.exe" | Rename-Item -NewName eSigner_CKA.exe
+                  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\eSignerCKA"
+                  ./eSigner_CKA.exe /CURRENTUSER /VERYSILENT /SUPPRESSMSGBOXES /DIR="$env:USERPROFILE\eSignerCKA" | Out-Null
+                  & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" config -mode "product" -user "${{ secrets.ESIGNER_USER_NAME }}" -pass "${{ secrets.ESIGNER_USER_PASSWORD }}" -totp "${{ secrets.ESIGNER_USER_TOTP }}" -key "$env:USERPROFILE\eSignerCKA\master.key" -r
+                  & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" unload
+                  & "$env:USERPROFILE\eSignerCKA\eSignerCKATool.exe" load
+                  $Cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1
+                  $SubjectName = ($Cert.Subject -replace ", ?", "`n" | ConvertFrom-StringData).CN
+                  echo "ED_SIGNTOOL_THUMBPRINT=$($Cert.Thumbprint)" >> $env:GITHUB_ENV
+                  echo "ED_SIGNTOOL_SUBJECT_NAME=$SubjectName" >> $env:GITHUB_ENV
+
+            - name: Build
+              working-directory: trustbridge-desktop
+              run: |
+                  pnpm run build:ts
+                  pnpm run build:res
+                  npx electron-builder --win --x64 --publish never
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: trustbridge-windows-x64
+                  retention-days: 14
+                  path: |
+                      trustbridge-desktop/dist/*.exe
+                      trustbridge-desktop/dist/*.msi
+
+    build-linux:
+        name: Linux (x64)
+        runs-on: ubuntu-24.04
+        steps:
+            - name: Checkout trustbridge-desktop
+              uses: actions/checkout@v4
+              with:
+                  path: trustbridge-desktop
+
+            - name: Checkout trustbridge-web
+              uses: actions/checkout@v4
+              with:
+                  repository: DFLEXX13/trustbridge-web
+                  ref: develop
+                  path: trustbridge-web
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 11
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: trustbridge-desktop/.node-version
+                  cache: "pnpm"
+                  cache-dependency-path: |
+                      trustbridge-desktop/pnpm-lock.yaml
+                      trustbridge-web/pnpm-lock.yaml
+
+            - name: Install trustbridge-web deps
+              working-directory: trustbridge-web
+              run: pnpm install --frozen-lockfile
+
+            - name: Build element-web
+              working-directory: trustbridge-web
+              run: pnpm --filter element-web build
+
+            - name: Install trustbridge-desktop deps
+              working-directory: trustbridge-desktop
+              run: pnpm install --frozen-lockfile
+
+            - name: Fetch + brand webapp.asar
+              working-directory: trustbridge-desktop
+              run: pnpm run fetch:trustbridge:source
+
+            - name: Build
+              working-directory: trustbridge-desktop
+              run: |
+                  pnpm run build:ts
+                  pnpm run build:res
+                  npx electron-builder --linux --x64 --publish never
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: trustbridge-linux-x64
+                  retention-days: 14
+                  path: |
+                      trustbridge-desktop/dist/*.deb
+                      trustbridge-desktop/dist/*.tar.gz
