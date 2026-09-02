@@ -1,0 +1,53 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "https://chat.trustbridge.space"
+        }
+    },
+    "brand": "TrustBridge",
+    "help_url": "https://trustbridge.space",
+    "help_encryption_url": "https://trustbridge.space",
+    "help_key_storage_url": "https://trustbridge.space",
+    "branding": {
+        "auth_header_logo_url": "themes/element/img/logos/trustbridge-logo.png",
+        "auth_footer_links": [
+            { "text": "Privacy", "url": "https://trustbridge.space/privacy" },
+            { "text": "EULA", "url": "https://trustbridge.space/eula" }
+        ],
+        "logo_link_url": "https://trustbridge.space"
+    },
+    "embedded_pages": {
+        "login_for_welcome": true
+    },
+    "disable_3pid_login": true,
+    "setting_defaults": {
+        "UIFeature.registration": false,
+        "UIFeature.widgets": false,
+        "UIFeature.feedback": false,
+        "UIFeature.locationSharing": false
+    },
+    "show_labs_settings": false,
+    "element_call": {
+        "brand": "TrustBridge Calls"
+    },
+    "mobile_builds": {
+        "ios": "https://apps.apple.com/app/id6740811289",
+        "android": "https://play.google.com/store/apps/details?id=com.trustbridge.application"
+    },
+    "desktop_builds": {
+        "available": false
+    },
+    "desktopBuilds": {
+        "available": false
+    },
+    "terms_and_conditions_links": [
+        {
+            "url": "https://trustbridge.space/eula",
+            "text": "EULA"
+        },
+        {
+            "url": "https://trustbridge.space/privacy",
+            "text": "Privacy Policy"
+        }
+    ]
+}

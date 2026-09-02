@@ -1,0 +1,49 @@
+{
+    "$comment": "Platform-neutral TrustBridge design tokens. Source of truth for colors, radii, and typography across all clients (desktop/Electron now; iOS and Android later). Values here are raw, not CSS - each platform maps them to its own mechanism (CSS custom properties for Electron, Swift constants for iOS, Compose theme for Android).",
+    "color": {
+        "light": {
+            "bgCanvas": "#FFFFFF",
+            "bgElevated": "#F1F4F7",
+            "bgElevated2": "#EEF2F5",
+            "textPrimary": "#0A2433",
+            "textSecondary": "#5B7488",
+            "textMuted": "#98A5AD",
+            "border": "#E4E9ED",
+            "accent": "#2678E3",
+            "accentGradientStart": "#2678E3",
+            "accentGradientEnd": "#4C26E3",
+            "onAccent": "#FFFFFF",
+            "bubbleSentBg": "accentGradient",
+            "bubbleSentText": "#FFFFFF",
+            "bubbleReceivedBg": "#EEF2F5",
+            "bubbleReceivedText": "#0A2433"
+        },
+        "dark": {
+            "bgCanvas": "#061F2D",
+            "bgElevated": "#0A2433",
+            "bgElevated2": "#102C3D",
+            "textPrimary": "#F2F6F9",
+            "textSecondary": "#8FA9BC",
+            "textMuted": "#5B7488",
+            "border": "rgba(255,255,255,0.12)",
+            "accent": "#2678E3",
+            "accentGradientStart": "#2678E3",
+            "accentGradientEnd": "#4C26E3",
+            "onAccent": "#FFFFFF",
+            "bubbleSentBg": "accentGradient",
+            "bubbleSentText": "#FFFFFF",
+            "bubbleReceivedBg": "#102C3D",
+            "bubbleReceivedText": "#F2F6F9"
+        }
+    },
+    "radius": {
+        "sm": 8,
+        "md": 14,
+        "lg": 16,
+        "full": "50%"
+    },
+    "typography": {
+        "fontFamily": "Inter"
+    },
+    "iconSet": "lucide"
+}

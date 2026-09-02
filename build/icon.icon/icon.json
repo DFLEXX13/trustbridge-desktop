@@ -5,8 +5,8 @@
       "layers" : [
         {
           "glass" : false,
-          "image-name" : "element.png",
-          "name" : "element"
+          "image-name" : "trustbridge.png",
+          "name" : "trustbridge"
         }
       ],
       "name" : "Figma",

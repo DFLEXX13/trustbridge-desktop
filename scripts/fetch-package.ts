@@ -54,6 +54,7 @@ async function main(): Promise<number | undefined> {
     let filename: string | undefined;
     let url: string | undefined;
     let setVersion = false;
+    let sourceDir: string | undefined;
 
     while (process.argv.length > 2) {
         switch (process.argv[2]) {
@@ -76,29 +77,35 @@ async function main(): Promise<number | undefined> {
                 process.argv.shift();
                 cfgDir = process.argv[2];
                 break;
+            case "--source":
+                process.argv.shift();
+                sourceDir = process.argv[2];
+                break;
             default:
                 targetVersion = process.argv[2];
         }
         process.argv.shift();
     }
 
-    if (targetVersion === undefined) {
-        targetVersion = "v" + riotDesktopPackageJson.version;
-    } else if (targetVersion !== "develop") {
-        setVersion = true; // version was specified
-    }
+    if (!sourceDir) {
+        if (targetVersion === undefined) {
+            targetVersion = "v" + riotDesktopPackageJson.version;
+        } else if (targetVersion !== "develop") {
+            setVersion = true; // version was specified
+        }
 
-    if (targetVersion === "develop") {
-        filename = "develop.tar.gz";
-        url = DEVELOP_TGZ_URL;
-        verify = false; // develop builds aren't signed
-    } else if (targetVersion.includes("://")) {
-        filename = targetVersion.substring(targetVersion.lastIndexOf("/") + 1);
-        url = targetVersion;
-        verify = false; // manually verified
-    } else {
-        filename = `element-${targetVersion}.tar.gz`;
-        url = PACKAGE_URL_PREFIX + targetVersion + "/" + filename;
+        if (targetVersion === "develop") {
+            filename = "develop.tar.gz";
+            url = DEVELOP_TGZ_URL;
+            verify = false; // develop builds aren't signed
+        } else if (targetVersion.includes("://")) {
+            filename = targetVersion.substring(targetVersion.lastIndexOf("/") + 1);
+            url = targetVersion;
+            verify = false; // manually verified
+        } else {
+            filename = `element-${targetVersion}.tar.gz`;
+            url = PACKAGE_URL_PREFIX + targetVersion + "/" + filename;
+        }
     }
 
     const haveGpg = await new Promise<boolean>((resolve) => {
@@ -146,12 +153,21 @@ async function main(): Promise<number | undefined> {
     }
 
     let haveDeploy = false;
-    let expectedDeployDir = path.join(deployDir, path.basename(filename).replace(/\.tar\.gz/, ""));
+    let expectedDeployDir = sourceDir
+        ? path.join(deployDir, "trustbridge-source")
+        : path.join(deployDir, path.basename(filename!).replace(/\.tar\.gz/, ""));
+
     try {
         await fs.opendir(expectedDeployDir);
-        console.log(expectedDeployDir + "already exists");
+        console.log(expectedDeployDir + " already exists");
         haveDeploy = true;
     } catch {}
+
+    if (sourceDir && !haveDeploy) {
+        console.log(sourceDir + " -> " + expectedDeployDir);
+        await fs.cp(sourceDir, expectedDeployDir, { recursive: true });
+        haveDeploy = true;
+    }
 
     if (!haveDeploy) {
         const outPath = path.join(pkgDir, filename);

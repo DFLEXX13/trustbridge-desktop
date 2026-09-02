@@ -30,6 +30,8 @@ interface Metadata {
     name: string;
     productName: string;
     description: string;
+    author?: string;
+    homepage?: string;
 }
 
 /**
@@ -123,9 +125,12 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
         name: variant.name,
         productName: variant.productName,
         description: variant.description,
+        ...(variant.author && { author: variant.author }),
+        ...(variant.homepage && { homepage: variant.homepage }),
         electron_appId: variant.appId,
         electron_protocol: variant.protocols[0],
     },
+    copyright: `Copyright © ${new Date().getFullYear()} ${variant.author ?? "New Vector Ltd."}`,
     linux: {
         target: ["tar.gz", "deb"],
         category: "Network;InstantMessaging;Chat",
