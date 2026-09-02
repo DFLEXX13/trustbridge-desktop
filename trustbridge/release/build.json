@@ -3,7 +3,7 @@
     "name": "trustbridge-desktop",
     "productName": "TrustBridge",
     "description": "TrustBridge: secure communication",
-    "author": "TrustBridge",
+    "author": { "name": "TrustBridge" },
     "homepage": "https://trustbridge.space",
     "protocols": ["space.trustbridge.desktop", "trustbridge"]
 }

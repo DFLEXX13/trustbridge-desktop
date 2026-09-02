@@ -78,7 +78,10 @@ jobs:
             - name: Build (signed + notarized)
               if: ${{ vars.APPLE_TEAM_ID != '' }}
               working-directory: trustbridge-desktop
-              run: pnpm run build:universal
+              run: |
+                  pnpm run build:ts
+                  pnpm run build:res
+                  npx electron-builder --universal --publish never
               env:
                   APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
                   APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -87,7 +90,10 @@ jobs:
             - name: Build (unsigned)
               if: ${{ vars.APPLE_TEAM_ID == '' }}
               working-directory: trustbridge-desktop
-              run: pnpm run build:universal
+              run: |
+                  pnpm run build:ts
+                  pnpm run build:res
+                  npx electron-builder --universal --publish never
 
             - uses: actions/upload-artifact@v4
               with:

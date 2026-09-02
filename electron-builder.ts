@@ -30,7 +30,10 @@ interface Metadata {
     name: string;
     productName: string;
     description: string;
-    author?: string;
+    // Object form (matching npm's package.json convention) rather than a plain string:
+    // electron-winstaller reads `packageJson.author.name` when generating the Squirrel.Windows
+    // nuspec and fails the build ("Authors is required") if author is a bare string.
+    author?: { name: string; email?: string };
     homepage?: string;
 }
 
@@ -130,7 +133,7 @@ const config: Omit<Writable<Configuration>, "electronFuses"> & {
         electron_appId: variant.appId,
         electron_protocol: variant.protocols[0],
     },
-    copyright: `Copyright © ${new Date().getFullYear()} ${variant.author ?? "New Vector Ltd."}`,
+    copyright: `Copyright © ${new Date().getFullYear()} ${variant.author?.name ?? "New Vector Ltd."}`,
     linux: {
         target: ["tar.gz", "deb"],
         category: "Network;InstantMessaging;Chat",
