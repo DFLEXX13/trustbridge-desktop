@@ -221,6 +221,17 @@ if (process.env.ED_SIGNTOOL_SUBJECT_NAME && process.env.ED_SIGNTOOL_THUMBPRINT) 
     config.win.signtoolOptions!.certificateSha1 = process.env.ED_SIGNTOOL_THUMBPRINT;
 }
 
+/**
+ * Allow specifying the macOS codesigning identity via env var, for local signed builds
+ * before notarization credentials (App Store Connect API key) are wired up in CI.
+ * @param {string} process.env.APPLE_CODESIGN_IDENTITY
+ */
+if (process.env.APPLE_CODESIGN_IDENTITY) {
+    config.mac.identity = process.env.APPLE_CODESIGN_IDENTITY;
+    // TODO: remove once App Store Connect API key is configured and notarization should run
+    config.mac.notarize = false;
+}
+
 if (os.platform() === "linux") {
     // Electron crashes on debian if there's a space in the path.
     // https://github.com/vector-im/element-web/issues/13171
