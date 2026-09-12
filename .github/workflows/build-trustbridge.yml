@@ -32,6 +32,7 @@ jobs:
     build-macos:
         name: macOS (universal)
         runs-on: macos-15
+        if: false # TEMP: windows+linux release-asset build, revert after
         env:
             # `if:` can't reference `secrets` directly, so mirror presence checks into env vars.
             HAS_APPLE_CSC: ${{ secrets.APPLE_CSC_LINK != '' }}
