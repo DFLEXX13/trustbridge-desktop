@@ -203,7 +203,7 @@ jobs:
                   name: trustbridge-windows-x64
                   retention-days: 14
                   path: |
-                      trustbridge-desktop/dist/*.exe
+                      trustbridge-desktop/dist/squirrel-windows/*.exe
                       trustbridge-desktop/dist/*.msi
 
     build-linux:
