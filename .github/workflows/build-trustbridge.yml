@@ -8,8 +8,16 @@ name: Build TrustBridge Desktop
 #
 # Signing is opportunistic: if the relevant secrets aren't set, the build still runs and
 # produces an unsigned/ad-hoc-signed artifact (exactly what building locally without
-# APPLE_TEAM_ID/ESIGNER_* env vars already does) rather than failing. Add the secrets once
-# certificates exist (see repo docs / ask Claude) and signing turns on automatically.
+# ESIGNER_*/APPLE_CSC_LINK env vars already does) rather than failing. Add the secrets once
+# certificates exist and signing turns on automatically.
+#
+# macOS signing + notarization secrets:
+#   APPLE_TEAM_ID (var)          - Apple Developer Team ID
+#   APPLE_CSC_LINK               - base64 of the Developer ID Application .p12 (cert + key)
+#   APPLE_CSC_KEY_PASSWORD       - password for that .p12
+#   APPLE_API_KEY_BASE64         - base64 of the App Store Connect API key .p8
+#   APPLE_API_KEY_ID             - that key's ID
+#   APPLE_API_ISSUER             - App Store Connect issuer ID
 
 on:
     workflow_dispatch:
@@ -69,31 +77,34 @@ jobs:
               run: pnpm run fetch:trustbridge:source
 
             - name: Import signing certificate
-              if: ${{ vars.APPLE_TEAM_ID != '' }}
+              if: ${{ secrets.APPLE_CSC_LINK != '' }}
               uses: apple-actions/import-codesign-certs@v3
               with:
                   p12-file-base64: ${{ secrets.APPLE_CSC_LINK }}
                   p12-password: ${{ secrets.APPLE_CSC_KEY_PASSWORD }}
 
-            - name: Build (signed + notarized)
-              if: ${{ vars.APPLE_TEAM_ID != '' }}
+            - name: Write Apple API key for notarization
+              if: ${{ secrets.APPLE_API_KEY_BASE64 != '' }}
+              working-directory: trustbridge-desktop
+              run: |
+                  mkdir -p private_keys
+                  echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > private_keys/AuthKey.p8
+
+            - name: Build
               working-directory: trustbridge-desktop
               run: |
                   pnpm run build:ts
                   pnpm run build:res
                   npx electron-builder --universal --publish never
               env:
-                  APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
-                  APPLE_ID: ${{ secrets.APPLE_ID }}
-                  APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+                  APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_BASE64 != '' && format('{0}/trustbridge-desktop/private_keys/AuthKey.p8', github.workspace) || '' }}
+                  APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+                  APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
-            - name: Build (unsigned)
-              if: ${{ vars.APPLE_TEAM_ID == '' }}
+            - name: Remove Apple API key
+              if: ${{ always() }}
               working-directory: trustbridge-desktop
-              run: |
-                  pnpm run build:ts
-                  pnpm run build:res
-                  npx electron-builder --universal --publish never
+              run: rm -f private_keys/AuthKey.p8
 
             - uses: actions/upload-artifact@v4
               with:
