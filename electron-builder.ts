@@ -222,14 +222,19 @@ if (process.env.ED_SIGNTOOL_SUBJECT_NAME && process.env.ED_SIGNTOOL_THUMBPRINT) 
 }
 
 /**
- * Allow specifying the macOS codesigning identity via env var, for local signed builds
- * before notarization credentials (App Store Connect API key) are wired up in CI.
+ * Allow specifying the macOS codesigning identity via env var, for local signed builds.
  * @param {string} process.env.APPLE_CODESIGN_IDENTITY
  */
 if (process.env.APPLE_CODESIGN_IDENTITY) {
     config.mac.identity = process.env.APPLE_CODESIGN_IDENTITY;
-    // TODO: remove once App Store Connect API key is configured and notarization should run
-    config.mac.notarize = false;
+
+    // electron-builder/@electron/notarize auto-notarizes when it finds
+    // APPLE_API_KEY + APPLE_API_KEY_ID + APPLE_API_ISSUER in env. Until those are
+    // set, skip notarization explicitly so the build doesn't fail trying to run it
+    // without credentials.
+    if (!process.env.APPLE_API_KEY) {
+        config.mac.notarize = false;
+    }
 }
 
 if (os.platform() === "linux") {
