@@ -117,6 +117,7 @@ jobs:
     build-windows:
         name: Windows (x64)
         runs-on: windows-2025
+        if: false # TEMP: macOS-only test run, revert after
         defaults:
             run:
                 shell: bash
@@ -205,6 +206,7 @@ jobs:
     build-linux:
         name: Linux (x64)
         runs-on: ubuntu-24.04
+        if: false # TEMP: macOS-only test run, revert after
         steps:
             - name: Checkout trustbridge-desktop
               uses: actions/checkout@v4
