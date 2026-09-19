@@ -91,7 +91,7 @@ echo "Fetching + branding webapp.asar..."
 pnpm run fetch:trustbridge:source >> "$LOG_FILE" 2>&1 || fail "pnpm run fetch:trustbridge:source"
 
 echo "Building, signing and notarizing (universal)..."
-rm -f dist/*.dmg dist/*.zip
+rm -f dist/*.dmg dist/*.zip dist/Element-*.blockmap
 { pnpm run build:ts && pnpm run build:res && npx electron-builder --universal --publish never; } \
   >> "$LOG_FILE" 2>&1 || fail "electron-builder --universal"
 
