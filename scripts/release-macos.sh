@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Build a signed + notarized macOS universal TrustBridge Desktop and upload it to GitHub Releases.
-# Usage: scripts/release-macos.sh [--dry-run]
-#   --dry-run   build (and sign/notarize) only, skip the GitHub upload
+# Usage: scripts/release-macos.sh [--dry-run] [--replace]
+#   --dry-run   build (and sign/notarize) only, skip the GitHub upload and the git/release checks
+#   --replace   allow overwriting files of an already PUBLISHED release with the same tag
+# A real run stops if: either repo has uncommitted changes, HEAD (or ../trustbridge-web HEAD) is not
+# pushed, or the release tag is already published. A missing release is created as a DRAFT pinned
+# to the built commit; an existing draft just gets the files.
 #
 # Windows/Linux installers are NOT built here: they come from the CI workflow
 # (.github/workflows/build-trustbridge.yml) and are attached to the release by hand.
@@ -23,9 +27,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 DRY_RUN=false
+REPLACE=false
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
+    --replace) REPLACE=true ;;
     *) echo "Unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -84,6 +90,26 @@ fi
 VERSION="$(node -p "require('./package.json').version")"
 TAG="v$VERSION"
 
+# Real run only: refuse to publish from a state that cannot be reproduced from git,
+# and refuse to touch an already published release. All checks run before the long build.
+if ! $DRY_RUN; then
+  [[ -z "$(git status --porcelain)" ]] || fail "uncommitted changes in trustbridge-desktop"
+  [[ -z "$(git -C ../trustbridge-web status --porcelain)" ]] || fail "uncommitted changes in ../trustbridge-web"
+  git fetch -q origin >> "$LOG_FILE" 2>&1 || fail "git fetch origin"
+  git branch -r --contains HEAD | grep -q 'origin/develop' || fail "HEAD is not pushed to origin/develop"
+  git -C ../trustbridge-web fetch -q origin >> "$LOG_FILE" 2>&1 || fail "git fetch in ../trustbridge-web"
+  [[ -z "$(git -C ../trustbridge-web log origin/develop..HEAD --oneline)" ]] || fail "unpushed commits in ../trustbridge-web"
+  RELEASES_JSON="$(gh release list -R "$GH_REPO" --limit 200 --json tagName,isDraft 2>>"$LOG_FILE")" \
+    || fail "gh release list"
+  RELEASE_STATE="$(node -e '
+    const r = JSON.parse(process.argv[1]).find((x) => x.tagName === process.argv[2]);
+    console.log(!r ? "none" : r.isDraft ? "draft" : "published");
+  ' "$RELEASES_JSON" "$TAG")"
+  if [[ "$RELEASE_STATE" == "published" ]] && ! $REPLACE; then
+    fail "release $TAG is already published (use --replace to overwrite its files)"
+  fi
+fi
+
 echo "Building element-web from ../trustbridge-web..."
 pnpm run build:element-web >> "$LOG_FILE" 2>&1 || fail "pnpm run build:element-web"
 
@@ -108,8 +134,9 @@ if $DRY_RUN; then
 fi
 
 echo "Uploading to GitHub release $TAG..."
-if ! gh release view "$TAG" -R "$GH_REPO" >> "$LOG_FILE" 2>&1; then
-  gh release create "$TAG" -R "$GH_REPO" --target develop --draft \
+if [[ "$RELEASE_STATE" == "none" ]]; then
+  # The tag is created on publish; pin it to the exact commit that was built
+  gh release create "$TAG" -R "$GH_REPO" --target "$(git rev-parse HEAD)" --draft \
     --title "TrustBridge Desktop $VERSION" --notes "TrustBridge Desktop $VERSION" \
     >> "$LOG_FILE" 2>&1 || fail "gh release create $TAG"
 fi

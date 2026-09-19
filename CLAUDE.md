@@ -2,7 +2,7 @@
 
 Ребрендинг Element Desktop (Electron, клиент Matrix) для TrustBridge. Форк `element-hq/element-desktop`,
 remote `origin` = `DFLEXX13/trustbridge-desktop`, рабочая ветка `develop`, `upstream` = Element.
-Собирается под macOS, Windows и Linux из одного кода. Текущая версия: 1.12.13.
+Собирается под macOS, Windows и Linux из одного кода. Текущая версия: 1.12.14 (задаётся только в `package.json`).
 Владелец — не разработчик: объяснения короткие и по-русски. Другие платформы: iOS `trustbridge-app-v2`,
 Android `trustbridge-android`. См. также `docs/HANDOFF.md`.
 
@@ -25,8 +25,10 @@ Node из `.node-version` (nvm), пакетный менеджер pnpm. Нуж�
 
 ## Выкладка
 - macOS (локально): `scripts/release-macos.sh` — сборка, подпись, нотаризация, загрузка `.dmg`/`.zip` в GitHub Release `v<версия>`.
-  Если релиза нет, создаётся **черновик**. `--dry-run` пропускает только загрузку в GitHub: подпись и
-  нотаризация выполняются, нотаризация занимает от нескольких минут до получаса.
+  Если релиза нет, создаётся **черновик** с тегом на собранный коммит (`--target <sha>`); если черновик есть, в него добавляются файлы.
+  `--dry-run` пропускает только загрузку в GitHub и проверки git: подпись и нотаризация выполняются
+  (от нескольких минут до получаса). Боевой запуск останавливается при незакоммиченных изменениях в этом репозитории
+  или в `../trustbridge-web`, если HEAD не в `origin/develop`, и если релиз с этим тегом уже опубликован (обход: `--replace`).
   Полный лог: `build/release-macos.log`; в консоль идёт итог и последние 20 строк при ошибке.
 - Windows и Linux (CI): `gh workflow run build-trustbridge.yml --ref develop -R DFLEXX13/trustbridge-desktop`,
   затем `gh run download <id> -R DFLEXX13/trustbridge-desktop -n trustbridge-windows-x64|trustbridge-linux-x64 -D <папка>`.
@@ -41,6 +43,8 @@ Node из `.node-version` (nvm), пакетный менеджер pnpm. Нуж�
 - Создать файл `desktop.env` и завести секреты в GitHub.
 - Запуск workflow для Windows/Linux, ожидание (~10 минут), скачивание артефактов.
 - Прикрепить `.msi`, `.exe`, `.AppImage`, `.deb` к релизу, написать описание и опубликовать черновик.
+  Публикация создаёт тег `v*`, а тег автоматически запускает `build-trustbridge.yml` (сборка трёх ОС, без публикации).
+- Автообновления нет: `electron-updater` не используется, `update_base_url` не задан, `latest-mac.yml` приложением не читается.
 - Дождаться нотаризации Apple (обычно минуты) и проверить `.dmg` на чистом Mac (Gatekeeper).
 - Подпись Windows: секретов SSL.com (`ESIGNER_*`) в GitHub нет, установщики не подписаны.
 
