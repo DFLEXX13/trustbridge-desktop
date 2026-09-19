@@ -46,10 +46,19 @@ for v in APPLE_CODESIGN_IDENTITY APPLE_TEAM_ID APPLE_API_KEY APPLE_API_KEY_ID AP
   fi
 done
 if [[ ! -f "$APPLE_API_KEY" ]]; then
-  echo "APPLE_API_KEY does not point to a file: $APPLE_API_KEY" >&2
+  echo "APPLE_API_KEY in $SECRETS_FILE does not point to an existing file" >&2
   exit 1
 fi
+# electron-builder rejects the "Developer ID Application:" prefix in the identity name
+APPLE_CODESIGN_IDENTITY="${APPLE_CODESIGN_IDENTITY#Developer ID Application: }"
 export APPLE_CODESIGN_IDENTITY APPLE_TEAM_ID APPLE_API_KEY APPLE_API_KEY_ID APPLE_API_ISSUER
+if ! security find-identity -v -p codesigning | grep -F "Developer ID Application: " | grep -qF "$APPLE_CODESIGN_IDENTITY"; then
+  echo "APPLE_CODESIGN_IDENTITY in $SECRETS_FILE matches no Developer ID Application certificate in the keychain" >&2
+  echo "Compare with: security find-identity -v -p codesigning" >&2
+  exit 1
+fi
+# TrustBridge variant (appId, productName, protocols), same as CI
+export VARIANT_PATH="trustbridge/release/build.json"
 
 BUILD_DIR="$REPO_ROOT/build"
 LOG_FILE="$BUILD_DIR/release-macos.log"

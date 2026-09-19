@@ -17,7 +17,7 @@ Android `trustbridge-android`. См. также `docs/HANDOFF.md`.
 - Соседний репозиторий `../trustbridge-web` (форк element-web, ветка `develop`) — исходники веб-части. Должен лежать рядом.
 
 ## Сборка
-Node из `.node-version` (nvm), пакетный менеджер pnpm.
+Node из `.node-version` (nvm), пакетный менеджер pnpm. Нужна именно эта версия: `nvm install $(cat .node-version)`.
 - Веб из исходников: `pnpm run build:element-web`, затем `pnpm run fetch:trustbridge:source` (копирует, брендирует, пакует `webapp.asar`).
 - Запуск для проверки: `pnpm run start`.
 - Установщик: `pnpm run build:ts && pnpm run build:res && npx electron-builder --universal --publish never`.
@@ -25,7 +25,8 @@ Node из `.node-version` (nvm), пакетный менеджер pnpm.
 
 ## Выкладка
 - macOS (локально): `scripts/release-macos.sh` — сборка, подпись, нотаризация, загрузка `.dmg`/`.zip` в GitHub Release `v<версия>`.
-  Если релиза нет, создаётся **черновик**. `--dry-run` — только сборка, без загрузки.
+  Если релиза нет, создаётся **черновик**. `--dry-run` пропускает только загрузку в GitHub: подпись и
+  нотаризация выполняются, нотаризация занимает от нескольких минут до получаса.
   Полный лог: `build/release-macos.log`; в консоль идёт итог и последние 20 строк при ошибке.
 - Windows и Linux (CI): `gh workflow run build-trustbridge.yml --ref develop -R DFLEXX13/trustbridge-desktop`,
   затем `gh run download <id> -R DFLEXX13/trustbridge-desktop -n trustbridge-windows-x64|trustbridge-linux-x64 -D <папка>`.
