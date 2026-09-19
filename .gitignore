@@ -20,3 +20,18 @@ yarn-error.log
 .DS_Store
 /playwright-report
 .pnpm-store
+
+# secrets
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+desktop.env
+/private_keys/
+
+# build logs from scripts
+/build/*.log

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scripts/release-macos.sh)",
+      "Bash(scripts/release-macos.sh --dry-run)",
+      "Bash(pnpm run build:element-web)",
+      "Bash(pnpm run fetch:trustbridge:source)",
+      "Bash(pnpm run build:ts)",
+      "Bash(pnpm run build:res)",
+      "Bash(pnpm run start)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(npx electron-builder --universal --publish never)",
+      "Bash(gh run list -R DFLEXX13/trustbridge-desktop:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run download:*)",
+      "Bash(gh workflow run build-trustbridge.yml --ref develop -R DFLEXX13/trustbridge-desktop)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(~/Projects/trustbridge-cert-apple/**)",
+      "Read(~/.appstoreconnect/**)",
+      "Read(**/*.p8)",
+      "Read(**/*.p12)",
+      "Read(**/*.mobileprovision)",
+      "Read(**/*.keystore)",
+      "Read(**/*.jks)",
+      "Read(**/desktop.env)",
+      "Read(**/testflight.env)",
+      "Bash(cat ~/Projects/trustbridge-cert-apple:*)",
+      "Bash(ls ~/Projects/trustbridge-cert-apple:*)",
+      "Bash(cat ~/.appstoreconnect:*)"
+    ]
+  }
+}
