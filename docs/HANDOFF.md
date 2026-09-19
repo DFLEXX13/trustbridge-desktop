@@ -7,6 +7,7 @@
 - Миграция на сборку веба из исходников (`../trustbridge-web`) завершена: `fetch:trustbridge:source` + `apply-trustbridge-branding.ts`.
 - CI `build-trustbridge.yml` собирает macOS universal (подпись Developer ID + нотаризация по API-ключу), Windows x64 (msi, exe), Linux x64 (AppImage, deb).
 - Релиз v1.12.13 выложен (12.09.2026): dmg, msi, exe, AppImage, deb.
+- Релиз v1.12.14 опубликован (19.09.2026, тег на `9407e948e874e7ff191203a3b2757fdc0779c14a`). macOS собран локально скриптом; Windows и Linux из CI (run 35438105396, тег v1.12.14) загружены вручную. Веб в CI собран из `trustbridge-web` коммита `e2d0d9d625629a8a33adeca4308339a4ce7b8af0` (содержит `cfcaccdd44`, новые звуки). Windows-файлы без подписи.
 - Добавлены `scripts/release-macos.sh`, `CLAUDE.md`, `.claude/settings.json`, этот файл.
 - `scripts/release-macos.sh --dry-run` на macOS прошёл (19.09.2026): версия v1.12.13, подпись Developer ID и нотаризация успешны, `.app` проходит `codesign --verify --deep --strict` и `spctl` (Notarized Developer ID), билет на `.app` пришит. Найдено и исправлено в скрипте: `VARIANT_PATH`, префикс имени сертификата, проверка сертификата до сборки, версия Node и pnpm 10.32.1 под Node 24.14.0.
 
@@ -23,7 +24,7 @@
 - Проверить установку `.dmg` на чистом Mac (Gatekeeper) и запуск приложения.
 - Решить, когда делать `git push` ветки `develop` (локальные коммиты не отправлены).
 - Боевой запуск `scripts/release-macos.sh` (без `--dry-run`) не делался. Осторожно: `gh release upload --clobber` перезапишет одноимённый `TrustBridge-1.12.13-universal.dmg` в уже опубликованном релизе v1.12.13.
-- В `../trustbridge-web` есть незакоммиченные правки звуков (`apps/web/res/media/*`); скрипт собирает веб в таком состоянии.
+- Ссылки скачивания в `trustbridge-web` (`apps/web/src/SdkConfig.ts`, строки 61–64) ещё ведут на v1.12.13; обновить на v1.12.14 и решить, как деплоится сайт (не задокументировано).
 - Windows не подписан: нет `ESIGNER_*` в GitHub Secrets (SSL.com eSigner). Решить: завести или оставить без подписи.
 - `build/icon.ico` не обновлён.
 - Полная де-брендизация: иконки на Lucide, убрать «Message layout», диалоги комнат, эмодзи, About, звуки, заставка.
