@@ -2,7 +2,7 @@
 
 Ребрендинг Element Desktop (Electron, клиент Matrix) для TrustBridge. Форк `element-hq/element-desktop`,
 remote `origin` = `DFLEXX13/trustbridge-desktop`, рабочая ветка `develop`, `upstream` = Element.
-Собирается под macOS, Windows и Linux из одного кода. Текущая версия: 1.12.14 (задаётся только в `package.json`).
+Собирается под macOS, Windows и Linux из одного кода. Текущая версия: 1.12.15 (задаётся только в `package.json`).
 Владелец — не разработчик: объяснения короткие и по-русски. Другие платформы: iOS `trustbridge-app-v2`,
 Android `trustbridge-android`. См. также `docs/HANDOFF.md`.
 
