@@ -1,6 +1,6 @@
 # TrustBridge Desktop — handoff
 
-Состояние на 19.09.2026. Общий контекст и команды — в `CLAUDE.md`.
+Состояние на 29.09.2026. Общий контекст и команды — в `CLAUDE.md`.
 
 ## Что сделано
 - Ребрендинг: конфиг, вход по логину без регистрации, тема (светлая и тёмная), тексты en/ru без «Element»/«Matrix», иконка macOS и Linux.
@@ -8,6 +8,7 @@
 - CI `build-trustbridge.yml` собирает macOS universal (подпись Developer ID + нотаризация по API-ключу), Windows x64 (msi, exe), Linux x64 (AppImage, deb).
 - Релиз v1.12.13 выложен (12.09.2026): dmg, msi, exe, AppImage, deb.
 - Релиз v1.12.14 опубликован (19.09.2026, тег на `9407e948e874e7ff191203a3b2757fdc0779c14a`). macOS собран локально скриптом; Windows и Linux из CI (run 35438105396, тег v1.12.14) загружены вручную. Веб в CI собран из `trustbridge-web` коммита `e2d0d9d625629a8a33adeca4308339a4ce7b8af0` (содержит `cfcaccdd44`, новые звуки). Windows-файлы без подписи.
+- Релиз v1.12.15 (29.09.2026): перенос редизайна iOS (карточки звонков, без щитов, «устройства» вместо «сеансов», отключён vector.im). Черновик с dmg/zip (локально, подписан и нотаризован), msi/exe/AppImage/deb из CI run 36561477763. Веб — `trustbridge-web` `0d9a9d08d9`. Публикует владелец. Артефакты CI качаются медленно (~0,3 МБ/с), быстрее через `gh api .../actions/artifacts/<id>/zip`.
 - Добавлены `scripts/release-macos.sh`, `CLAUDE.md`, `.claude/settings.json`, этот файл.
 - `scripts/release-macos.sh --dry-run` на macOS прошёл (19.09.2026): версия v1.12.13, подпись Developer ID и нотаризация успешны, `.app` проходит `codesign --verify --deep --strict` и `spctl` (Notarized Developer ID), билет на `.app` пришит. Найдено и исправлено в скрипте: `VARIANT_PATH`, префикс имени сертификата, проверка сертификата до сборки, версия Node и pnpm 10.32.1 под Node 24.14.0.
 
