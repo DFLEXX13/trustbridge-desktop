@@ -24,7 +24,9 @@
         "UIFeature.registration": false,
         "UIFeature.widgets": false,
         "UIFeature.feedback": false,
-        "UIFeature.locationSharing": false
+        "UIFeature.locationSharing": false,
+        "UIFeature.identityServer": false,
+        "UIFeature.thirdPartyId": false
     },
     "show_labs_settings": false,
     "element_call": {
