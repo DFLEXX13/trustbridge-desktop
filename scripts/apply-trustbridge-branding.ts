@@ -314,6 +314,23 @@ ${CSS_MARKER}
 }
 .mx_AuthPage_modal, .mx_AuthPage_modal * { color: #0A2433 !important; }
 .mx_AuthPage_modal a { color: #2678E3 !important; }
+/* The dark-text rule above also hit text inside filled (primary) buttons, which then showed
+ * dark-on-black. Primary buttons get the brand gradient with white text instead. */
+.mx_AuthPage_modal [data-kind="primary"],
+.mx_AuthPage_modal .mx_AccessibleButton_kind_primary {
+    background: linear-gradient(135deg, #2678E3, #4C26E3) !important;
+    border-color: transparent !important;
+}
+.mx_AuthPage_modal [data-kind="primary"],
+.mx_AuthPage_modal [data-kind="primary"] *,
+.mx_AuthPage_modal .mx_AccessibleButton_kind_primary,
+.mx_AuthPage_modal .mx_AccessibleButton_kind_primary * {
+    color: #ffffff !important;
+}
+.mx_AuthPage_modal [data-kind="primary"]:hover,
+.mx_AuthPage_modal .mx_AccessibleButton_kind_primary:hover {
+    filter: brightness(1.08);
+}
 .mx_AuthPage_modal input,
 .mx_AuthPage_modal select,
 .mx_AuthPage_modal [class*="Dropdown"],
